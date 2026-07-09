@@ -7,50 +7,55 @@ function eventTypeLabel(details: EventDetails) {
 }
 
 async function renderPdf(html: string, filename: string) {
-     const mod: any = await import("html2pdf.js");
-     const html2pdf = mod.default || mod;
+  const mod: any = await import("html2pdf.js");
+  const html2pdf = mod.default || mod;
 
-     // Overlay ini SENGAJA ditampilkan (bukan disembunyikan) agar browser
-     // benar-benar merender pixelnya sebelum di-"foto" oleh html2canvas.
-     const overlay = document.createElement("div");
-     overlay.style.position = "fixed";
-     overlay.style.inset = "0";
-     overlay.style.zIndex = "99999";
-     overlay.style.background = "#f3f4f6";
-     overlay.style.overflow = "auto";
-     overlay.style.display = "flex";
-     overlay.style.justifyContent = "center";
-     overlay.style.padding = "24px";
+  // Overlay ini SENGAJA ditampilkan sebentar di layar (bukan disembunyikan
+  // lewat posisi/negative z-index) supaya browser benar-benar selesai
+  // "melukis" (paint) elemen ini sebelum di-capture oleh html2canvas.
+  // Tanpa ini, hasil PDF bisa kosong/putih di beberapa browser.
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.zIndex = "99999";
+  overlay.style.background = "#f3f4f6";
+  overlay.style.overflow = "auto";
+  overlay.style.display = "flex";
+  overlay.style.justifyContent = "center";
+  overlay.style.padding = "24px";
 
-     const wrapper = document.createElement("div");
-     wrapper.style.width = "210mm";
-     wrapper.style.background = "white";
-     wrapper.style.boxShadow = "0 0 20px rgba(0,0,0,0.15)";
-     wrapper.innerHTML = html;
+  const wrapper = document.createElement("div");
+  wrapper.style.width = "210mm";
+  wrapper.style.background = "white";
+  wrapper.style.boxShadow = "0 0 20px rgba(0,0,0,0.15)";
+  wrapper.innerHTML = html;
 
-     overlay.appendChild(wrapper);
-     document.body.appendChild(overlay);
+  overlay.appendChild(wrapper);
+  document.body.appendChild(overlay);
 
-     // beri browser 2 frame untuk benar-benar selesai melukis elemen ini
-     await new Promise((resolve) =>
-       requestAnimationFrame(() => requestAnimationFrame(resolve))
-     );
+  // Beri browser 2 frame untuk memastikan elemen benar-benar sudah dirender
+  await new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  );
 
-     const opt = {
-       margin: [12, 12, 12, 12],
-       filename,
-       image: { type: "jpeg", quality: 0.98 },
-       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-       pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-     };
+  const opt = {
+    margin: [12, 12, 12, 12],
+    filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    // mode 'css' saja (bukan 'avoid-all') supaya tidak ada gap kosong
+    // dipaksakan; page-break-inside:avoid ditaruh manual hanya di elemen
+    // yang memang tidak boleh terpotong (lihat style inline di bawah).
+    pagebreak: { mode: ["css"] },
+  };
 
-     try {
-       await html2pdf().set(opt).from(wrapper).save();
-     } finally {
-       document.body.removeChild(overlay);
-     }
-   }
+  try {
+    await html2pdf().set(opt).from(wrapper).save();
+  } finally {
+    document.body.removeChild(overlay);
+  }
+}
 
 export async function exportRundownPDF(details: EventDetails, rundown: ProcessionItem[]) {
   const total = rundown.reduce((s, r) => s + r.dur, 0);
@@ -62,25 +67,31 @@ export async function exportRundownPDF(details: EventDetails, rundown: Processio
 
   const rows = rundown
     .map(
-      (r, i) => `<tr style="border-bottom:1px solid #e5e7eb;">
+      (r, i) => `<tr style="border-bottom:1px solid #e5e7eb;page-break-inside:avoid;break-inside:avoid;">
         <td style="padding:12px 5px;text-align:center;color:#444;">${i + 1}</td>
         <td style="padding:12px 5px;text-align:center;color:#222;font-family:monospace;font-weight:bold;">${fmt(r.start)} - ${fmt(r.end)}</td>
         <td style="padding:12px 5px;text-align:left;color:#111;font-weight:600;">${r.name}</td>
         <td style="padding:12px 5px;text-align:center;color:#666;">${r.dur}m</td>
         <td style="padding:12px 5px;text-align:left;color:#555;font-weight:bold;">${r.pic || "-"}</td>
         <td style="padding:12px 5px;text-align:left;color:#666;font-size:10px;">${r.note || "-"}</td>
-        <td style="padding:12px 5px;text-align:center;"><div style="width:16px;height:16px;border:2px solid #ccc;border-radius:3px;margin:0 auto;"></div></td>
+        <td style="padding:12px 5px;text-align:center;">
+          ${
+            r.done
+              ? `<div style="width:16px;height:16px;border:2px solid #3E8C63;border-radius:3px;margin:0 auto;background:#3E8C63;color:white;font-size:12px;line-height:12px;font-weight:bold;">✓</div>`
+              : `<div style="width:16px;height:16px;border:2px solid #ccc;border-radius:3px;margin:0 auto;"></div>`
+          }
+        </td>
       </tr>`
     )
     .join("");
 
   const html = `
   <div style="padding:10mm;font-family:'Plus Jakarta Sans',sans-serif;color:#111;box-sizing:border-box;width:210mm;">
-    <div style="text-align:center;border-bottom:2px solid #BE8E3B;padding-bottom:15px;margin-bottom:20px;">
+    <div style="text-align:center;border-bottom:2px solid #BE8E3B;padding-bottom:15px;margin-bottom:20px;page-break-inside:avoid;break-inside:avoid;">
       <h1 style="margin:0;color:#8A6220;font-size:24px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">${mainTitle}</h1>
       <p style="margin:5px 0 0 0;color:#555;font-size:14px;font-weight:700;letter-spacing:1px;">${details.groom || "Mempelai Pria"} &amp; ${details.bride || "Mempelai Wanita"}</p>
     </div>
-    <div style="margin-bottom:20px;background:#FBF4E6;padding:15px;border-radius:8px;border:1px solid #EBD3A0;">
+    <div style="margin-bottom:20px;background:#FBF4E6;padding:15px;border-radius:8px;border:1px solid #EBD3A0;page-break-inside:avoid;break-inside:avoid;">
       <table style="width:100%;font-size:12px;line-height:1.6;">
         <tr>
           <td style="font-weight:700;width:15%;">Mempelai</td><td style="width:35%;">: ${details.groom || "-"} &amp; ${details.bride || "-"}</td>
@@ -102,16 +113,16 @@ export async function exportRundownPDF(details: EventDetails, rundown: Processio
         <tr style="background:#FBF4E6;border-bottom:2px solid #BE8E3B;">
           <th style="padding:10px 5px;color:#785522;width:5%;">No</th>
           <th style="padding:10px 5px;color:#785522;width:14%;">Waktu</th>
-          <th style="padding:10px 5px;color:#785522;text-align:left;width:25%;">Aktivitas / Prosesi</th>
+          <th style="padding:10px 5px;color:#785522;text-align:left;width:23%;">Aktivitas / Prosesi</th>
           <th style="padding:10px 5px;color:#785522;width:8%;">Dur.</th>
           <th style="padding:10px 5px;color:#785522;text-align:left;width:15%;">PIC</th>
-          <th style="padding:10px 5px;color:#785522;text-align:left;width:25%;">Catatan</th>
+          <th style="padding:10px 5px;color:#785522;text-align:left;width:23%;">Catatan</th>
           <th style="padding:10px 5px;color:#785522;width:8%;">Cek</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
-    <div style="border-top:1px solid #e0e0e0;padding-top:10px;font-size:9px;color:#888;display:flex;justify-content:space-between;">
+    <div style="border-top:1px solid #e0e0e0;padding-top:10px;font-size:9px;color:#888;display:flex;justify-content:space-between;page-break-inside:avoid;break-inside:avoid;">
       <div style="width:70%;">Catatan: Waktu bersifat estimasi. PIC harap standby 15 menit sebelum waktu dimulai.</div>
       <div style="text-align:right;width:30%;">Dicetak: ${new Date().toLocaleString("id-ID")}</div>
     </div>
@@ -129,11 +140,11 @@ export async function exportMcScriptPDF(details: EventDetails, content: string) 
 
   const html = `
   <div style="padding:15mm;font-family:'Plus Jakarta Sans',sans-serif;color:#111;box-sizing:border-box;width:210mm;">
-    <div style="text-align:center;border-bottom:2px solid #9333ea;padding-bottom:15px;margin-bottom:20px;">
+    <div style="text-align:center;border-bottom:2px solid #9333ea;padding-bottom:15px;margin-bottom:20px;page-break-inside:avoid;break-inside:avoid;">
       <h1 style="margin:0;color:#7e22ce;font-size:24px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">${mainTitle}</h1>
       <p style="margin:5px 0 0 0;color:#555;font-size:14px;font-weight:700;">${details.groom || "-"} &amp; ${details.bride || "-"}</p>
     </div>
-    <div style="margin-bottom:20px;font-size:12px;color:#555;display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:10px;">
+    <div style="margin-bottom:20px;font-size:12px;color:#555;display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:10px;page-break-inside:avoid;break-inside:avoid;">
       <div><strong>Tanggal:</strong> ${details.date || "-"}</div>
       <div><strong>Lokasi:</strong> ${details.location || "-"}</div>
     </div>
