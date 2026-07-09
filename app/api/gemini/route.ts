@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const MODEL = "gemini-2.5-flash-preview-09-2025";
+const MODEL = "gemini-2.5-flash";
 
 type Mode = "rundown" | "mc-script" | "pic-brief" | "speech";
 
