@@ -10,23 +10,30 @@ async function renderPdf(html: string, filename: string) {
   const mod: any = await import("html2pdf.js");
   const html2pdf = mod.default || mod;
 
-  const wrapper = document.createElement("div");
-  wrapper.style.position = "absolute";
-  wrapper.style.top = "-9999px";
-  wrapper.style.left = "-9999px";
-  wrapper.style.width = "210mm";
-  wrapper.style.background = "white";
-  wrapper.innerHTML = html;
-  document.body.appendChild(wrapper);
+const wrapper = document.createElement("div");
+   wrapper.style.position = "fixed";
+   wrapper.style.top = "0";
+   wrapper.style.left = "0";
+   wrapper.style.zIndex = "-9999";
+   wrapper.style.width = "210mm";
+   wrapper.style.background = "white";
+   wrapper.innerHTML = html;
+   document.body.appendChild(wrapper);
 
-  const opt = {
-    margin: [12, 12, 12, 12],
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-  };
+   const opt = {
+     margin: [12, 12, 12, 12],
+     filename,
+     image: { type: "jpeg", quality: 0.98 },
+     html2canvas: {
+       scale: 2,
+       useCORS: true,
+       backgroundColor: "#ffffff",
+       windowWidth: wrapper.scrollWidth,
+       windowHeight: wrapper.scrollHeight,
+     },
+     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+     pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+   };
 
   await html2pdf().set(opt).from(wrapper).save();
   document.body.removeChild(wrapper);
