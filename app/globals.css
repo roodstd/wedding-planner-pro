@@ -1,0 +1,56 @@
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", sans-serif;
+  background-color: #faf9f4;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(190, 142, 59, 0.28);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(190, 142, 59, 0.5);
+}
+
+.field-input {
+  @apply w-full rounded-xl border border-ink-100 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition placeholder:text-ink-400/60 focus:border-gold-400 focus:ring-4 focus:ring-gold-400/15;
+}
+
+.table-input {
+  @apply w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-sm transition hover:border-ink-100 focus:border-gold-400 focus:bg-white focus:outline-none focus:ring-4 focus:ring-gold-400/15;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gold-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-gold transition hover:brightness-105 active:scale-[0.98];
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink-100 bg-white px-4 py-2.5 text-sm font-semibold text-ink-700 shadow-soft transition hover:bg-parchment-100 active:scale-[0.98];
+}
+
+.btn-ghost {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-ink-400 transition hover:bg-ink-50 hover:text-ink-800;
+}
+
+.card {
+  @apply rounded-2xl border border-ink-100/70 bg-white shadow-soft;
+}
+
+.drag-over {
+  border-top: 2px solid #be8e3b !important;
+  background: rgba(190, 142, 59, 0.06);
+}
