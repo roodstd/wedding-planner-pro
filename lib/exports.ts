@@ -7,37 +7,50 @@ function eventTypeLabel(details: EventDetails) {
 }
 
 async function renderPdf(html: string, filename: string) {
-  const mod: any = await import("html2pdf.js");
-  const html2pdf = mod.default || mod;
+     const mod: any = await import("html2pdf.js");
+     const html2pdf = mod.default || mod;
 
-const wrapper = document.createElement("div");
-   wrapper.style.position = "fixed";
-   wrapper.style.top = "0";
-   wrapper.style.left = "0";
-   wrapper.style.zIndex = "-9999";
-   wrapper.style.width = "210mm";
-   wrapper.style.background = "white";
-   wrapper.innerHTML = html;
-   document.body.appendChild(wrapper);
+     // Overlay ini SENGAJA ditampilkan (bukan disembunyikan) agar browser
+     // benar-benar merender pixelnya sebelum di-"foto" oleh html2canvas.
+     const overlay = document.createElement("div");
+     overlay.style.position = "fixed";
+     overlay.style.inset = "0";
+     overlay.style.zIndex = "99999";
+     overlay.style.background = "#f3f4f6";
+     overlay.style.overflow = "auto";
+     overlay.style.display = "flex";
+     overlay.style.justifyContent = "center";
+     overlay.style.padding = "24px";
 
-   const opt = {
-     margin: [12, 12, 12, 12],
-     filename,
-     image: { type: "jpeg", quality: 0.98 },
-     html2canvas: {
-       scale: 2,
-       useCORS: true,
-       backgroundColor: "#ffffff",
-       windowWidth: wrapper.scrollWidth,
-       windowHeight: wrapper.scrollHeight,
-     },
-     jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-     pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-   };
+     const wrapper = document.createElement("div");
+     wrapper.style.width = "210mm";
+     wrapper.style.background = "white";
+     wrapper.style.boxShadow = "0 0 20px rgba(0,0,0,0.15)";
+     wrapper.innerHTML = html;
 
-  await html2pdf().set(opt).from(wrapper).save();
-  document.body.removeChild(wrapper);
-}
+     overlay.appendChild(wrapper);
+     document.body.appendChild(overlay);
+
+     // beri browser 2 frame untuk benar-benar selesai melukis elemen ini
+     await new Promise((resolve) =>
+       requestAnimationFrame(() => requestAnimationFrame(resolve))
+     );
+
+     const opt = {
+       margin: [12, 12, 12, 12],
+       filename,
+       image: { type: "jpeg", quality: 0.98 },
+       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+       pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+     };
+
+     try {
+       await html2pdf().set(opt).from(wrapper).save();
+     } finally {
+       document.body.removeChild(overlay);
+     }
+   }
 
 export async function exportRundownPDF(details: EventDetails, rundown: ProcessionItem[]) {
   const total = rundown.reduce((s, r) => s + r.dur, 0);
