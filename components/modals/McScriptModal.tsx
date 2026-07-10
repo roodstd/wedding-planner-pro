@@ -33,6 +33,10 @@ export default function McScriptModal({ open, onClose }: { open: boolean; onClos
         location: details.location,
         date: details.date,
         rundownText,
+        groomFather: details.groomFather,
+        groomMother: details.groomMother,
+        brideFather: details.brideFather,
+        brideMother: details.brideMother,
       });
       setContent(text);
       toast("✨ Naskah MC berhasil dibuat AI!", "success");
