@@ -5,6 +5,7 @@ import { usePlanner } from "@/context/PlannerContext";
 import { useToast } from "@/context/ToastContext";
 import { useGemini } from "@/lib/useGemini";
 import { EVENT_TYPE_OPTIONS } from "@/lib/templates";
+import { exportSpeechPDF } from "@/lib/exports";
 
 const SPEECH_TYPES = [
   "Sambutan Perwakilan Keluarga Pria",
@@ -21,6 +22,7 @@ export default function SpeechModal({ open, onClose }: { open: boolean; onClose:
   const { loading, callGemini } = useGemini();
   const [speechType, setSpeechType] = useState(SPEECH_TYPES[0]);
   const [content, setContent] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   if (!open) return null;
 
@@ -85,6 +87,20 @@ export default function SpeechModal({ open, onClose }: { open: boolean; onClose:
         <div className="mt-4 flex flex-col gap-3 border-t border-ink-100 pt-4 sm:flex-row">
           <button onClick={onClose} className="btn-secondary flex-1">
             Tutup
+          </button>
+          <button
+            disabled={exporting || !content}
+            onClick={async () => {
+              setExporting(true);
+              try {
+                await exportSpeechPDF(details, speechType, content);
+              } finally {
+                setExporting(false);
+              }
+            }}
+            className="flex-1 rounded-xl bg-red-500 px-4 py-2.5 font-semibold text-white shadow-soft transition hover:bg-red-600 disabled:opacity-60"
+          >
+            {exporting ? "Menyiapkan PDF..." : "Cetak PDF"}
           </button>
           <button
             onClick={() => {
