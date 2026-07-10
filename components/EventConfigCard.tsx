@@ -24,6 +24,13 @@ export default function EventConfigCard({
     { key: "startTime", label: "Jam Mulai", placeholder: "", type: "time" },
   ];
 
+  const parentFields: { key: keyof typeof details; label: string; placeholder: string }[] = [
+    { key: "groomFather", label: "Ayah Mempelai Pria", placeholder: "Nama Ayah" },
+    { key: "groomMother", label: "Ibu Mempelai Pria", placeholder: "Nama Ibu" },
+    { key: "brideFather", label: "Ayah Mempelai Wanita", placeholder: "Nama Ayah" },
+    { key: "brideMother", label: "Ibu Mempelai Wanita", placeholder: "Nama Ibu" },
+  ];
+
   return (
     <div className="card p-6">
       <div className="mb-5 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -79,6 +86,28 @@ export default function EventConfigCard({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div className="mt-6 border-t border-ink-100/70 pt-5">
+        <h4 className="mb-4 flex items-center gap-2 text-sm font-semibold text-ink-600">
+          <span className="text-gold-500">◆</span> Data Orang Tua Mempelai
+          <span className="font-normal text-ink-300">— dipakai otomatis oleh AI saat membuat pidato &amp; naskah MC</span>
+        </h4>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {parentFields.map((f) => (
+            <div key={f.key}>
+              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-400">
+                {f.label}
+              </label>
+              <input
+                value={details[f.key] as string}
+                placeholder={f.placeholder}
+                onChange={(e) => setDetail(f.key, e.target.value)}
+                className="field-input"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </div>
