@@ -56,6 +56,46 @@ async function renderPdf(html: string, filename: string) {
   }
 }
 
+function buildTextDocumentHtml(opts: {
+  title: string;
+  accentColor: string;
+  titleColor: string;
+  groom: string;
+  bride: string;
+  date: string;
+  location: string;
+  content: string;
+}) {
+  const rawParagraphs = opts.content.split(/\n\s*\n/).filter((p) => p.trim() !== "");
+  const paragraphs = rawParagraphs.length > 1 ? rawParagraphs : opts.content.split(/\n/).filter((p) => p.trim() !== "");
+
+  const formattedParagraphs = paragraphs
+    .map((p) => {
+      const withInline = escapeHtml(p)
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.*?)\*/g, "<em>$1</em>")
+        .replace(/\n/g, "<br>");
+      return `<p style="margin:0 0 12px 0;page-break-inside:avoid;break-inside:avoid;">${withInline}</p>`;
+    })
+    .join("");
+
+  return `
+  <div style="padding:6mm 2mm;font-family:'Plus Jakarta Sans',sans-serif;color:#111;box-sizing:border-box;width:198mm;">
+    <div style="text-align:center;border-bottom:2px solid ${opts.accentColor};padding-bottom:15px;margin-bottom:20px;page-break-inside:avoid;break-inside:avoid;">
+      <h1 style="margin:0;color:${opts.titleColor};font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">${escapeHtml(opts.title)}</h1>
+      <p style="margin:5px 0 0 0;color:#555;font-size:14px;font-weight:700;">${escapeHtml(opts.groom || "-")} &amp; ${escapeHtml(opts.bride || "-")}</p>
+    </div>
+    <div style="margin-bottom:20px;font-size:12px;color:#555;display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:10px;page-break-inside:avoid;break-inside:avoid;">
+      <div><strong>Tanggal:</strong> ${escapeHtml(opts.date || "-")}</div>
+      <div><strong>Lokasi:</strong> ${escapeHtml(opts.location || "-")}</div>
+    </div>
+    <div style="font-size:13px;line-height:1.8;color:#222;text-align:justify;">${formattedParagraphs}</div>
+    <div style="border-top:1px solid #e0e0e0;padding-top:10px;margin-top:30px;font-size:9px;color:#888;text-align:right;page-break-inside:avoid;break-inside:avoid;">
+      Dicetak: ${new Date().toLocaleString("id-ID")}
+    </div>
+  </div>`;
+}
+
 export async function exportRundownPDF(details: EventDetails, rundown: ProcessionItem[]) {
   const total = rundown.reduce((s, r) => s + r.dur, 0);
   const h = Math.floor(total / 60);
@@ -133,36 +173,33 @@ export async function exportRundownPDF(details: EventDetails, rundown: Processio
 export async function exportMcScriptPDF(details: EventDetails, content: string) {
   const mainTitle = eventTypeLabel(details) ? `NASKAH MC ${eventTypeLabel(details)!.toUpperCase()}` : "NASKAH MASTER OF CEREMONY";
 
-  const rawParagraphs = content.split(/\n\s*\n/).filter((p) => p.trim() !== "");
-  const paragraphs = rawParagraphs.length > 1 ? rawParagraphs : content.split(/\n/).filter((p) => p.trim() !== "");
-
-  const formattedParagraphs = paragraphs
-    .map((p) => {
-      const withInline = escapeHtml(p)
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\*(.*?)\*/g, "<em>$1</em>")
-        .replace(/\n/g, "<br>");
-      return `<p style="margin:0 0 12px 0;page-break-inside:avoid;break-inside:avoid;">${withInline}</p>`;
-    })
-    .join("");
-
-  const html = `
-  <div style="padding:6mm 2mm;font-family:'Plus Jakarta Sans',sans-serif;color:#111;box-sizing:border-box;width:198mm;">
-    <div style="text-align:center;border-bottom:2px solid #9333ea;padding-bottom:15px;margin-bottom:20px;page-break-inside:avoid;break-inside:avoid;">
-      <h1 style="margin:0;color:#7e22ce;font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">${mainTitle}</h1>
-      <p style="margin:5px 0 0 0;color:#555;font-size:14px;font-weight:700;">${escapeHtml(details.groom || "-")} &amp; ${escapeHtml(details.bride || "-")}</p>
-    </div>
-    <div style="margin-bottom:20px;font-size:12px;color:#555;display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding-bottom:10px;page-break-inside:avoid;break-inside:avoid;">
-      <div><strong>Tanggal:</strong> ${escapeHtml(details.date || "-")}</div>
-      <div><strong>Lokasi:</strong> ${escapeHtml(details.location || "-")}</div>
-    </div>
-    <div style="font-size:13px;line-height:1.8;color:#222;text-align:justify;">${formattedParagraphs}</div>
-    <div style="border-top:1px solid #e0e0e0;padding-top:10px;margin-top:30px;font-size:9px;color:#888;text-align:right;page-break-inside:avoid;break-inside:avoid;">
-      Dicetak: ${new Date().toLocaleString("id-ID")}
-    </div>
-  </div>`;
+  const html = buildTextDocumentHtml({
+    title: mainTitle,
+    accentColor: "#9333ea",
+    titleColor: "#7e22ce",
+    groom: details.groom,
+    bride: details.bride,
+    date: details.date,
+    location: details.location,
+    content,
+  });
 
   await renderPdf(html, `Naskah_MC_${details.groom || "Pria"}_${details.bride || "Wanita"}.pdf`);
+}
+
+export async function exportSpeechPDF(details: EventDetails, speechType: string, content: string) {
+  const html = buildTextDocumentHtml({
+    title: speechType || "PIDATO & SAMBUTAN",
+    accentColor: "#e11d48",
+    titleColor: "#be123c",
+    groom: details.groom,
+    bride: details.bride,
+    date: details.date,
+    location: details.location,
+    content,
+  });
+
+  await renderPdf(html, `Pidato_${details.groom || "Pria"}_${details.bride || "Wanita"}.pdf`);
 }
 
 export async function exportExcelFile(details: EventDetails, rundown: ProcessionItem[]) {
