@@ -7,6 +7,10 @@ export type EventDetails = {
   wo: string;
   startTime: string;
   type: string;
+  groomFather: string;
+  groomMother: string;
+  brideFather: string;
+  brideMother: string;
 };
 
 export type ProcessionItem = {
@@ -62,6 +66,10 @@ export const DEFAULT_DETAILS: EventDetails = {
   wo: "",
   startTime: "08:00",
   type: "",
+  groomFather: "",
+  groomMother: "",
+  brideFather: "",
+  brideMother: "",
 };
 
 export const DEFAULT_WORKSPACE: WorkspaceState = {
