@@ -5,6 +5,21 @@ const MODEL = "gemini-2.5-flash";
 
 type Mode = "rundown" | "mc-script" | "pic-brief" | "speech";
 
+function parentsLine(p: any) {
+  const parts: string[] = [];
+  if (p.groomFather || p.groomMother) {
+    parts.push(
+      `Orang tua mempelai pria: ${[p.groomFather, p.groomMother].filter(Boolean).join(" & ") || "-"}`
+    );
+  }
+  if (p.brideFather || p.brideMother) {
+    parts.push(
+      `Orang tua mempelai wanita: ${[p.brideFather, p.brideMother].filter(Boolean).join(" & ") || "-"}`
+    );
+  }
+  return parts.length ? parts.join("\n") : "";
+}
+
 function buildRundownPrompt(p: any) {
   return {
     system:
@@ -35,6 +50,7 @@ Berikan catatan tambahan yang ringkas dan relevan.`,
 }
 
 function buildMcScriptPrompt(p: any) {
+  const parents = parentsLine(p);
   return {
     system:
       "Kamu adalah MC Profesional. Berikan output naskah langsung tanpa format markdown tebal berlebihan agar mudah disalin.",
@@ -42,11 +58,12 @@ function buildMcScriptPrompt(p: any) {
 Tolong buatkan teks naskah MC (meliputi prakata, opening, transisi pengenalan acara inti, dan closing penutupan) untuk acara ${p.eventType || "Pernikahan"} antara ${p.groom || "Mempelai Pria"} & ${p.bride || "Mempelai Wanita"}.
 Lokasi: ${p.location || "Lokasi Acara"}
 Tanggal: ${p.date || "Hari Ini"}
-
+${parents ? `\n${parents}\n` : ""}
 Berikut adalah susunan acaranya:
 ${p.rundownText || "-"}
 
 Tuliskan naskah MC yang terstruktur dengan gaya bahasa elegan, hangat, romantis, interaktif dan profesional.
+${parents ? "Sebutkan nama kedua orang tua mempelai secara wajar di bagian yang relevan (misalnya saat memperkenalkan mempelai, sesi sungkeman, atau ucapan terima kasih keluarga)." : ""}
 Beri panduan gaya bicara atau petunjuk panggung (seperti: [Dengan nada semangat], [Jeda sejenak], dll) untuk memudahkan MC membacanya.`,
   };
 }
@@ -70,12 +87,15 @@ Berikan instruksi langkah demi langkah, kapan mereka harus bersiap (standby), pe
 }
 
 function buildSpeechPrompt(p: any) {
+  const parents = parentsLine(p);
   return {
     system:
       "Kamu adalah penulis teks pidato (speechwriter) profesional untuk acara pernikahan. Berikan draf pidato langsung tanpa basa-basi pengantar markdown tebal.",
     prompt: `Tolong tuliskan draf pidato / sambutan jenis "${p.speechType}" untuk acara ${p.eventType || "Acara Pernikahan"} antara ${p.groom || "Mempelai Pria"} dan ${p.bride || "Mempelai Wanita"} yang diadakan di ${p.location || "Lokasi Acara"}.
+${parents ? `\n${parents}\n` : ""}
 Gaya bahasa: Menyentuh, elegan, hangat, romantis (jika untuk mempelai), dan sopan serta berterima kasih (jika untuk keluarga/orang tua).
 Sertakan sapaan kepada hadirin tamu undangan, rasa syukur, serta pesan-pesan utama yang biasa diutarakan pada momen tersebut.
+${parents ? "Kalau jenis pidato ini mewakili pihak keluarga (misalnya sambutan keluarga pria/wanita atau ucapan syukur orang tua), sebutkan nama orang tua yang relevan sesuai data di atas secara alami dalam kalimat." : ""}
 Buat dengan durasi pembacaan sekitar 2-3 menit.`,
   };
 }
