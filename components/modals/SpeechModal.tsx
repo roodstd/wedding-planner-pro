@@ -36,6 +36,10 @@ export default function SpeechModal({ open, onClose }: { open: boolean; onClose:
         groom: details.groom,
         bride: details.bride,
         location: details.location,
+        groomFather: details.groomFather,
+        groomMother: details.groomMother,
+        brideFather: details.brideFather,
+        brideMother: details.brideMother,
       });
       setContent(text);
       toast("✨ Draf pidato berhasil ditulis AI!", "success");
